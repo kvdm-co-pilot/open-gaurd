@@ -39,8 +39,10 @@ jobs:
 
       # On Ubuntu, iOS targets are automatically skipped by the OS-gating
       # in openguard-core/build.gradle.kts (isMacOs check).
+      # Sample app is also excluded by OS-gating in settings.gradle.kts
+      # (it requires appcompat/lifecycle-runtime-ktx from dl.google.com).
       # This compiles Android/JVM targets and runs commonTest + androidTest.
-      - name: Build (Android/JVM)
+      - name: Build (Android/JVM library modules)
         run: ./gradlew build
 
       - name: Test (Android/JVM + commonTest)
@@ -80,7 +82,8 @@ jobs:
 
       # On macOS, the OS-gating enables iOS targets automatically.
       # This compiles all targets including iOS framework linking.
-      - name: Build (all targets including iOS)
+      # The sample app is also included (OS check in settings.gradle.kts passes on Mac).
+      - name: Build (all targets including iOS + sample app)
         run: ./gradlew build
 
       # Run Kotlin/Native iOS unit tests on simulator

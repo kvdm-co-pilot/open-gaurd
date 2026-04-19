@@ -56,7 +56,7 @@ _**Priority: OPS-001 must execute first** — it unblocks all downstream code ta
 
 | Status | ID | Task | Owner | Depends On |
 |--------|----|------|-------|------------|
-| ☐ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
+| ✅ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
 | ☐ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
 | ☐ | RES-001 | Root detection bypass resistance research | @research | — |
 | ☐ | RES-002 | iOS jailbreak detection research (palera1n, rootless) | @research | — |
@@ -178,7 +178,7 @@ _Final documentation, publishing, and release automation._
 
 | Wave | Total | Done | In Progress | Not Started | Blocked |
 |------|-------|------|-------------|-------------|---------|
-| 0 | 6 | 0 | 0 | 6 | 0 |
+| 0 | 6 | 1 | 0 | 5 | 0 |
 | 1 | 6 | 0 | 0 | 6 | 0 |
 | 2a | 9 | 0 | 0 | 9 | 0 |
 | 2b | 10 | 0 | 0 | 10 | 0 |
@@ -186,4 +186,4 @@ _Final documentation, publishing, and release automation._
 | 4 | 6 | 0 | 0 | 6 | 0 |
 | 5 | 4 | 0 | 0 | 4 | 0 |
 | 6 | 6 | 0 | 0 | 6 | 0 |
-| **Total** | **52** | **0** | **0** | **52** | **0** |
+| **Total** | **52** | **1** | **0** | **51** | **0** |
