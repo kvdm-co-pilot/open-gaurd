@@ -73,6 +73,8 @@ Before delegating any task, always read these files for current project state:
 - `ORCHESTRATION.md` — Task board and progress
 - `AGENTS.md` — Project-wide agent instructions
 - `README.md` — Project overview
+- `.copilot/mcp.json` — Available MCP servers (Appium, WebDriverIO)
+- `docs/appium-mcp-integration.md` — MCP-driven mobile testing guide
 - `openguard-core/src/commonMain/kotlin/com/openguard/core/OpenGuard.kt` — Main entry point
 - `openguard-core/src/commonMain/kotlin/com/openguard/core/api/DetectionApi.kt` — Core detection interface
 - `openguard-core/src/commonMain/kotlin/com/openguard/core/OpenGuardConfig.kt` — Configuration DSL

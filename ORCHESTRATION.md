@@ -81,6 +81,8 @@ _Android `actual` implementations. Can run in parallel with Wave 2b (iOS)._
 | ☐ | AND-005 | Implement tamper detection (signature, installer, checksum) | @android | KMP-001 |
 | ☐ | SEC-001 | Security review: all Android detection implementations | @security-review | AND-001, AND-002, AND-003, AND-004, AND-005 |
 | ☐ | QA-002 | Android detection unit tests (all detection types) | @qa | AND-001, AND-002, AND-003, AND-004, AND-005 |
+| ☐ | QA-E2E-001 | Build sample app APK and run on emulator via Appium MCP | @qa | QA-002 |
+| ☐ | QA-E2E-002 | Validate all Android detections trigger correctly on emulator | @qa | QA-E2E-001 |
 
 ---
 
@@ -153,6 +155,7 @@ _Final documentation, publishing, and release automation._
 | ☐ | DOC-003 | PCI DSS 4.0 compliance mapping document | @docs | SEC-001, SEC-002, SEC-003, SEC-004, SEC-005 |
 | ☐ | OPS-003 | Maven Central publishing setup (POM, signing, Sonatype) | @devops | Wave 4 complete |
 | ☐ | OPS-004 | Release automation (versioning, CHANGELOG, tags) | @devops | OPS-003 |
+| ☐ | QA-E2E-003 | Screenshot-based regression tests for sample app UI | @qa | QA-E2E-002, DOC-002 |
 
 ---
 
@@ -162,10 +165,10 @@ _Final documentation, publishing, and release automation._
 |------|-------|------|-------------|-------------|---------|
 | 0 | 6 | 0 | 0 | 6 | 0 |
 | 1 | 6 | 0 | 0 | 6 | 0 |
-| 2a | 7 | 0 | 0 | 7 | 0 |
+| 2a | 9 | 0 | 0 | 9 | 0 |
 | 2b | 7 | 0 | 0 | 7 | 0 |
 | 3 | 5 | 0 | 0 | 5 | 0 |
 | 4 | 6 | 0 | 0 | 6 | 0 |
 | 5 | 4 | 0 | 0 | 4 | 0 |
-| 6 | 5 | 0 | 0 | 5 | 0 |
-| **Total** | **46** | **0** | **0** | **46** | **0** |
+| 6 | 6 | 0 | 0 | 6 | 0 |
+| **Total** | **49** | **0** | **0** | **49** | **0** |

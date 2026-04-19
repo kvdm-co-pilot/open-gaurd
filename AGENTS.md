@@ -16,6 +16,14 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 - Test: `./gradlew test`
 - Lint: `./gradlew detekt`
 - Android tests: `./gradlew connectedAndroidTest`
+- Start emulator: `emulator -avd openguard_test -noaudio -no-window &`
+- Start Appium: `appium &`
+
+## MCP Servers (AI-Driven Mobile Testing)
+- `@wdio/mcp` — WebDriverIO MCP for browser + mobile automation
+- `mcp-appium-visual` — Appium-native MCP with visual element detection
+- Config: `.copilot/mcp.json`
+- Guide: `docs/appium-mcp-integration.md`
 
 ## Code Style
 - Kotlin coding conventions

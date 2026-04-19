@@ -21,6 +21,16 @@ OpenGuard is an open-source Runtime Application Self-Protection (RASP) SDK for K
 | Test | `./gradlew test` |
 | Lint | `./gradlew detekt` |
 | Android instrumented tests | `./gradlew connectedAndroidTest` |
+| Start Android emulator | `emulator -avd openguard_test -noaudio -no-window &` |
+| Start Appium server | `appium &` |
+
+## MCP Servers
+
+Appium MCP servers are configured in `.copilot/mcp.json` for AI-driven mobile testing:
+- **@wdio/mcp** — WebDriverIO MCP for browser + mobile automation (recommended)
+- **mcp-appium-visual** — Appium-native MCP with visual element detection
+
+See `docs/appium-mcp-integration.md` for full setup and usage guide.
 
 ## Code Style
 
@@ -40,6 +50,7 @@ openguard-core/src/androidMain/ → Android actual implementations
 openguard-core/src/iosMain/     → iOS actual implementations (Kotlin/Native)
 openguard-android/              → Android-specific extensions
 sample/androidApp/              → Android sample application
+.copilot/mcp.json               → MCP server configuration (Appium, WebDriverIO)
 docs/                           → Documentation and research
 ```
 

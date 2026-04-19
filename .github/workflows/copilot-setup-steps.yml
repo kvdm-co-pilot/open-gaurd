@@ -1,0 +1,73 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- JDK (required for Gradle, Android SDK, and Appium) ---
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      # --- Node.js (required for Appium and MCP servers) ---
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # --- Appium + drivers ---
+      - name: Install Appium and drivers
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+          appium --version
+
+      # --- Appium MCP server (provides MCP tools for mobile automation) ---
+      # Two options are pre-installed; the orchestrator/QA agent can choose:
+      #   1. @wdio/mcp — WebDriverIO MCP (browser + mobile, unified)
+      #   2. mcp-appium-visual — Appium-native MCP with visual element detection
+      - name: Install Appium MCP servers
+        run: |
+          npm install -g @wdio/mcp
+          npm install -g mcp-appium-visual
+
+      # --- Android SDK & emulator ---
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android system image and create AVD
+        run: |
+          yes | sdkmanager "system-images;android-34;google_apis;x86_64" "emulator" "platform-tools" || true
+          echo "no" | avdmanager create avd -n openguard_test -k "system-images;android-34;google_apis;x86_64" --force
+
+      # --- Gradle dependencies (pre-cache for faster builds) ---
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Pre-warm Gradle
+        run: ./gradlew dependencies --no-daemon || true
