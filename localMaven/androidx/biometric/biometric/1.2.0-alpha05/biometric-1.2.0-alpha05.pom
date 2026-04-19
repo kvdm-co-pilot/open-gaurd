@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>androidx.biometric</groupId>
+  <artifactId>biometric</artifactId>
+  <version>1.2.0-alpha05</version>
+  <packaging>aar</packaging>
+  <name>biometric</name>
+  <description>Stub artifact for sandbox build where dl.google.com is blocked.</description>
+</project>

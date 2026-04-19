@@ -56,8 +56,8 @@ _**Priority: OPS-001 must execute first** — it unblocks all downstream code ta
 
 | Status | ID | Task | Owner | Depends On |
 |--------|----|------|-------|------------|
-| ☐ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
-| ☐ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
+| ✅ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
+| ✅ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
 | ☐ | RES-001 | Root detection bypass resistance research | @research | — |
 | ☐ | RES-002 | iOS jailbreak detection research (palera1n, rootless) | @research | — |
 | ☐ | RES-003 | Frida detection techniques research | @research | — |
@@ -71,12 +71,12 @@ _Shared interfaces that platform agents will implement._
 
 | Status | ID | Task | Owner | Depends On |
 |--------|----|------|-------|------------|
-| ☐ | KMP-001 | Define DetectionApi expect interface (all detection methods) | @kmp-core | OPS-001 |
-| ☐ | KMP-002 | Define CryptoApi expect interface (AES, SHA, HMAC, TOTP) | @kmp-core | OPS-001 |
-| ☐ | KMP-003 | Define StorageApi expect interface (put, get, delete, list) | @kmp-core | OPS-001 |
-| ☐ | KMP-004 | Implement OpenGuardConfig DSL (builder pattern, validation) | @kmp-core | KMP-001 |
-| ☐ | KMP-005 | Implement DetectionEngine (periodic checks, threat dispatch) | @kmp-core | KMP-001 |
-| ☐ | QA-001 | Set up test framework (JUnit 5, kotlin.test, test fixtures) | @qa | OPS-001 |
+| ✅ | KMP-001 | Define DetectionApi expect interface (all detection methods) | @kmp-core | OPS-001 |
+| ✅ | KMP-002 | Define CryptoApi expect interface (AES, SHA, HMAC, TOTP) | @kmp-core | OPS-001 |
+| ✅ | KMP-003 | Define StorageApi expect interface (put, get, delete, list) | @kmp-core | OPS-001 |
+| ✅ | KMP-004 | Implement OpenGuardConfig DSL (builder pattern, validation) | @kmp-core | KMP-001 |
+| ✅ | KMP-005 | Implement DetectionEngine (periodic checks, threat dispatch) | @kmp-core | KMP-001 |
+| ✅ | QA-001 | Set up test framework (JUnit 5, kotlin.test, test fixtures) | @qa | OPS-001 |
 
 ---
 
@@ -178,7 +178,8 @@ _Final documentation, publishing, and release automation._
 
 | Wave | Total | Done | In Progress | Not Started | Blocked |
 |------|-------|------|-------------|-------------|---------|
-| 0 | 6 | 0 | 0 | 6 | 0 |
+| 0 | 6 | 2 | 0 | 4 | 0 |
+| 1 | 6 | 6 | 0 | 0 | 0 |
 | 1 | 6 | 0 | 0 | 6 | 0 |
 | 2a | 9 | 0 | 0 | 9 | 0 |
 | 2b | 10 | 0 | 0 | 10 | 0 |
@@ -186,4 +187,4 @@ _Final documentation, publishing, and release automation._
 | 4 | 6 | 0 | 0 | 6 | 0 |
 | 5 | 4 | 0 | 0 | 4 | 0 |
 | 6 | 6 | 0 | 0 | 6 | 0 |
-| **Total** | **52** | **0** | **0** | **52** | **0** |
+| **Total** | **52** | **8** | **0** | **44** | **0** |

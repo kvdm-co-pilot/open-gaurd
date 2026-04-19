@@ -16,6 +16,4 @@ enum class ThreatSeverity(val level: Int) {
     HIGH(4),
     /** Critical severity — block operation and terminate session. */
     CRITICAL(5);
-
-    operator fun compareTo(other: ThreatSeverity): Int = this.level - other.level
 }

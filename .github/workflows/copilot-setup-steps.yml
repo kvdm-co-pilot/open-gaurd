@@ -88,11 +88,29 @@ jobs:
       - name: Pre-cache ALL Gradle dependencies (before firewall activates)
         run: |
           chmod +x gradlew
+
           # 1. Resolve build script / plugin dependencies (AGP, Kotlin plugin, etc.)
           #    This downloads com.android.library, kotlin.multiplatform from dl.google.com
           ./gradlew buildEnvironment --no-daemon
-          # 2. Resolve all module dependencies (AndroidX, OkHttp, coroutines, etc.)
-          ./gradlew :openguard-core:dependencies :openguard-android:dependencies :sample:androidApp:dependencies --no-daemon
-          # 3. Warm up the build to ensure all toolchains are downloaded
-          #    (Kotlin compiler, Android build tools, etc.)
-          ./gradlew :openguard-core:compileKotlinAndroid :openguard-android:compileKotlin --no-daemon || true
+
+          # 2. Resolve all module dependency metadata (POMs, module files)
+          #    Include sample app so its deps (appcompat, lifecycle-runtime-ktx, etc.) are cached
+          ./gradlew \
+            :openguard-core:dependencies \
+            :openguard-android:dependencies \
+            --no-daemon
+
+          # 3. Full build of the library modules — this downloads ALL compile JARs/AARs
+          #    (coroutines, okhttp, androidx annotation, core, biometric, security-crypto, etc.)
+          #    Must succeed here (full internet access) so JARs are in cache before firewall.
+          ./gradlew :openguard-core:build :openguard-android:build --no-daemon
+
+          # 4. Also resolve sample app deps while we have internet access
+          #    Pass -PincludeSampleApp=true to override the OS-gating in settings.gradle.kts
+          ./gradlew -PincludeSampleApp=true \
+            :sample:androidApp:dependencies \
+            :sample:androidApp:compileDebugKotlin \
+            --no-daemon || true
+
+          # 5. Warm up the Kotlin/Android compiler daemon
+          ./gradlew :openguard-core:compileCommonMainKotlinMetadata --no-daemon || true
