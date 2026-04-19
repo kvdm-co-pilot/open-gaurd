@@ -12,12 +12,18 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 - Testing: JUnit 5 (Android), XCTest (iOS), kotlin.test (common)
 
 ## Commands
-- Build: `./gradlew build`
-- Test: `./gradlew test`
+- Build: `./gradlew build` (Android/JVM in sandbox; all targets on macOS CI)
+- Test: `./gradlew test` (JVM + commonTest in sandbox; + iOS on macOS CI)
 - Lint: `./gradlew detekt`
 - Android tests: `./gradlew connectedAndroidTest`
 - Start emulator: `emulator -avd openguard_test -noaudio -no-window &`
 - Start Appium: `appium &`
+
+## Sandbox Constraints
+- `dl.google.com` is DNS-blocked — deps pre-cached via `copilot-setup-steps.yml`
+- iOS targets are OS-gated — skipped on Ubuntu, compiled on macOS CI
+- For iOS code changes: push → check macOS CI logs → fix if needed
+- See `docs/infrastructure/copilot-agent-infrastructure.md` for full details
 
 ## MCP Servers (AI-Driven Mobile Testing)
 - `@wdio/mcp` — WebDriverIO MCP for browser + mobile automation

@@ -275,9 +275,11 @@ For real-device testing (especially iOS), configure BrowserStack credentials:
 ```
 
 ### Firewall Considerations
+- **`dl.google.com` is DNS-blocked** in the Copilot sandbox — all Gradle deps must be pre-cached in `copilot-setup-steps.yml` before the firewall activates. This does NOT affect Appium/MCP (they're npm packages from `registry.npmjs.org` which is allowed)
 - Appium server runs on `localhost:4723` — no external network access needed
 - MCP servers communicate via stdio (no network ports)
 - Android emulator uses local ADB — no firewall issues
+- See `docs/infrastructure/copilot-agent-infrastructure.md` for full firewall details and mitigations
 
 ---
 

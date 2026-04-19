@@ -701,24 +701,193 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 | Limitation | Mitigation |
 |-----------|------------|
 | **Claude Opus 4.6 not available in Copilot session** | All workflows designed Copilot-only; Claude Opus 4.6 is optional via Agent HQ (separate workflow) |
+| **`dl.google.com` DNS-blocked in sandbox** | `copilot-setup-steps.yml` pre-caches ALL Gradle deps before firewall activates. Optionally add `dl.google.com` to repo's Copilot firewall allowlist as redundancy |
+| **iOS compilation impossible on Ubuntu sandbox** | OS-gating in `build.gradle.kts` skips iOS targets on Linux. `./gradlew build` succeeds for Android/JVM. macOS CI job validates iOS separately |
 | No true parallelism in web/cloud session | Sequential execution within session; use `/fleet` CLI locally for parallel work |
 | Context window limits | Break tasks into small units; keep briefs under 4K tokens |
 | No persistent inter-agent memory | Orchestrator relays context; ORCHESTRATION.md is shared state |
 | Single session scope | Progress persists in ORCHESTRATION.md; re-invoke orchestrator |
 | Agent hallucinations in security code | Dedicated `@security-review` agent + mandatory human review + comprehensive tests |
 | KMP compile errors from context gaps | Include full `expect` interface in every brief |
-| iOS build verification requires macOS | CI runs on macOS runner; local verification on Linux limited |
+| **Session tool budget (~50 requests)** | Expect 2-5 tasks per session. Full pipeline requires ~12-15 sessions across waves |
+| **New dependency addition in sandbox** | Agent cannot download from `dl.google.com`. Push change → CI resolves → or add domain to firewall allowlist |
+
+### 10.1 Sandbox-Aware Build Commands
+
+The orchestrator and worker agents MUST use these commands in the Copilot sandbox:
+
+| Command | Works in Sandbox? | Notes |
+|---------|-------------------|-------|
+| `./gradlew build` | ✅ | Compiles Android/JVM only (iOS OS-gated) |
+| `./gradlew test` | ✅ | Runs JVM + commonTest (no iOS tests) |
+| `./gradlew detekt` | ✅ | Lint check (when detekt plugin configured) |
+| `./gradlew connectedAndroidTest` | ✅ | Requires emulator started: `emulator -avd openguard_test -noaudio -no-window &` |
+| `./gradlew iosSimulatorArm64Test` | ❌ | Only in macOS CI — agent checks CI logs via GitHub MCP |
+| `./gradlew linkDebugFrameworkIosSimulatorArm64` | ❌ | Only in macOS CI |
+
+### 10.2 iOS Validation Feedback Loop
+
+Since the sandbox cannot compile iOS code, iOS tasks follow a different validation pattern:
+
+```
+1. @ios agent writes Kotlin/Native code (iosMain/)
+2. Agent pushes code via report_progress
+3. CI macOS job runs → compiles iOS + runs tests
+4. Agent checks CI results via GitHub MCP tools:
+   - list_workflow_runs → find the run
+   - get_job_logs → read iOS compilation output
+5. If CI fails → agent reads logs, fixes code, re-pushes
+6. If CI passes → orchestrator marks task ✅
+```
+
+This adds ~5-10 minutes per iOS task iteration (CI round-trip time).
 
 ---
 
-## 11. Next Steps
+## 11. Holistic Workflow: Orchestrator Invocation → Validated Result
+
+### 11.1 End-to-End Session Flow
+
+```
+Human invokes: @orchestrator (or /run-pipeline)
+  │
+  ▼
+┌─────────────────────────────────────────────────┐
+│  ORCHESTRATOR: Read ORCHESTRATION.md             │
+│  → Parse wave tables, find first ☐ task          │
+│  → Verify all dependencies are ✅                │
+│  → Select task (e.g., AND-001)                   │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  ORCHESTRATOR: Build Worker Brief                │
+│  → Read source docs for the task                 │
+│  → Read current source code                      │
+│  → Paste expect interface signatures             │
+│  → Include technical constraints                 │
+│  → Mark task 🔄 in ORCHESTRATION.md              │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  WORKER AGENT (e.g., @android):                  │
+│  → Read files from brief                         │
+│  → Implement changes                             │
+│  → Run: ./gradlew build                          │
+│  → Run: ./gradlew test                           │
+│  → Report: files changed, test results           │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────┐
+│  ORCHESTRATOR: Validate                          │
+│  → Read modified files                           │
+│  → Run: ./gradlew build (verify)                 │
+│  → Run: ./gradlew test (verify)                  │
+│  → If security task → delegate to @security-review│
+│  → If iOS task → check CI macOS job logs         │
+└──────────────────────┬──────────────────────────┘
+                       │
+                  ┌────┴────┐
+                  │ Pass?   │
+                  └────┬────┘
+              ┌────────┼────────┐
+              ▼        ▼        ▼
+           PASS     SEC-FAIL   BUILD-FAIL
+           │        │          │
+           ▼        ▼          ▼
+        Mark ✅   Mark ⚠️    Return to
+        Report    Send back   worker for
+        to human  to worker   fix
+```
+
+### 11.2 Session Budget Planning
+
+Each Copilot session has a tool budget (~50 requests). Realistic task capacity per session:
+
+| Task Type | Tool Calls | Tasks/Session |
+|-----------|-----------|---------------|
+| RES-* (research) | ~8-12 (web search + write doc) | 3-4 |
+| OPS-* (build config) | ~15-20 (edit + build + test) | 2-3 |
+| KMP-* (shared code) | ~10-15 (read + edit + build) | 3-4 |
+| AND-* (Android impl) | ~12-18 (read + edit + build + test) | 2-3 |
+| IOS-* (iOS impl) | ~15-25 (edit + push + wait CI + check logs) | 1-2 |
+| SEC-* (security review) | ~8-12 (read + analyze + write report) | 3-4 |
+| QA-* (tests) | ~12-18 (read + write tests + run) | 2-3 |
+| QA-E2E-* (emulator) | ~20-30 (boot emu + build APK + Appium + MCP) | 1 |
+
+### 11.3 Revised Session Plan
+
+```
+Session 1:  Wave 0 — OPS-001 (critical path), RES-001, RES-002
+Session 2:  Wave 0 — RES-003, RES-004, OPS-002
+Session 3:  Wave 1 — KMP-001, KMP-002, KMP-003
+Session 4:  Wave 1 — KMP-004, KMP-005, QA-001
+Session 5:  Wave 2a — AND-001, AND-002, AND-003
+Session 6:  Wave 2a — AND-004, AND-005
+Session 7:  Wave 2a — SEC-001, QA-002
+Session 8:  Wave 2a — QA-E2E-001, QA-E2E-002
+Session 9:  Wave 2b — IOS-001, IOS-002 (push → CI validates)
+Session 10: Wave 2b — IOS-003, IOS-004, IOS-005
+Session 11: Wave 2b — SEC-002, QA-003, IOS-010
+Session 12: Wave 3  — KMP-006, AND-006, IOS-006
+Session 13: Wave 3-4 — SEC-003, QA-004, AND-007, IOS-007
+Session 14: Wave 4  — AND-008, IOS-008, SEC-004, QA-005
+Session 15: Wave 5  — RES-005, AND-009, IOS-009, SEC-005
+Session 16: Wave 6  — DOC-001, DOC-002, DOC-003
+Session 17: Wave 6  — OPS-003, OPS-004, QA-E2E-003
+```
+
+**Total: ~17 sessions** to complete 52 tasks across 7 waves.
+
+### 11.4 Critical Path Optimization
+
+The critical path through the task graph is:
+
+```
+OPS-001 → KMP-001 → AND-001..005 → SEC-001 → QA-002 → QA-E2E-001
+                   → IOS-001..005 → SEC-002 → QA-003 → QA-E2E-004
+                   → KMP-006 → AND-006/IOS-006 → SEC-003 → QA-004
+                   → AND-007..008/IOS-007..008 → SEC-004 → QA-005
+                   → RES-005 → AND-009/IOS-009 → SEC-005
+                   → DOC-001..003, OPS-003..004, QA-E2E-003
+```
+
+**Optimization: OPS-001 must be the first task executed.** Without a working Gradle build, no subsequent task can be validated. The orchestrator's task selection rule ("first ☐ in lowest wave") would normally pick RES-001 first. The orchestrator should be instructed to prioritize OPS-* tasks when they have no dependencies, since they unblock all downstream work.
+
+---
+
+## 12. Infrastructure Documentation
+
+The full infrastructure setup, design philosophy, and replication guide is documented in:
+
+**[`docs/infrastructure/copilot-agent-infrastructure.md`](../infrastructure/copilot-agent-infrastructure.md)**
+
+This document covers:
+- The `dl.google.com` firewall constraint and pre-caching solution
+- Architecture diagrams showing the two-phase setup
+- OS-gating pattern for cross-platform builds
+- File-by-file reference for all infrastructure files
+- Step-by-step replication guide for new projects
+- Sandbox capabilities matrix
+- Common pitfalls and fixes
+
+---
+
+## 13. Next Steps
 
 1. **Immediate:** Create all `.github/agents/*.agent.md` files per this specification
-2. **Immediate:** Create `ORCHESTRATION.md` with Wave 0-6 task board
-3. **Immediate:** Create `AGENTS.md` with project-wide instructions
-4. **Immediate:** Create `.github/prompts/run-pipeline.prompt.md`
-5. **Week 1:** Execute Wave 0 (research + build system)
-6. **Week 2:** Execute Wave 1 (core API design)
-7. **Week 3-4:** Execute Wave 2 (all detection implementations in parallel)
-8. **Week 5:** Execute Wave 3-4 (network + crypto)
-9. **Week 6:** Execute Wave 5-6 (attestation + docs + distribution)
+2. **Immediate:** Create `ORCHESTRATION.md` with Wave 0-6 task board ✅
+3. **Immediate:** Create `AGENTS.md` with project-wide instructions ✅
+4. **Immediate:** Create `.github/prompts/run-pipeline.prompt.md` ✅
+5. **Immediate:** Add `gradlew`, `gradlew.bat`, `gradle-wrapper.jar` to repository ✅
+6. **Immediate:** Configure `copilot-setup-steps.yml` with full dependency pre-caching ✅
+7. **Immediate:** Add OS-gating for iOS targets in `build.gradle.kts` ✅
+8. **Immediate:** Add `dl.google.com` to Copilot firewall allowlist (repo settings — manual)
+9. **Session 1:** Execute OPS-001 first (verify build system works end-to-end)
+10. **Session 1-2:** Execute Wave 0 (research + remaining infrastructure)
+11. **Session 3-4:** Execute Wave 1 (core API design)
+12. **Session 5-8:** Execute Wave 2 (detection implementations)
+13. **Session 9-14:** Execute Waves 3-5 (network + crypto + attestation)
+14. **Session 15-17:** Execute Wave 6 (docs + distribution)

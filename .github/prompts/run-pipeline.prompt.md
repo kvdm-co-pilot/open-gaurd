@@ -38,6 +38,21 @@ Follow the full orchestrator workflow defined in `.github/agents/orchestrator.ag
 7. Mark the task `✅` or `⚠️` based on results
 8. Update the Progress Summary table
 
+### Task Priority Override
+
+When multiple tasks at the same wave level have no dependencies, **prioritize OPS-* tasks first**. Infrastructure tasks unblock all downstream work. Without a working Gradle build (OPS-001), no code task can be validated.
+
+### Sandbox-Aware Validation
+
+The Copilot cloud agent runs on Ubuntu behind a DNS firewall. Key rules:
+- **`./gradlew build`** compiles Android/JVM only (iOS targets are OS-gated, skipped on Ubuntu)
+- **`./gradlew test`** runs JVM + commonTest only (iOS tests require macOS CI)
+- **iOS tasks:** After the worker completes, push code via `report_progress`. Check the macOS CI job logs via GitHub MCP tools (`list_workflow_runs`, `get_job_logs`). If CI fails, read logs, fix code, and re-push
+- **Android emulator E2E:** Start with `emulator -avd openguard_test -noaudio -no-window &`, then `appium &`
+- **Dependencies are pre-cached** in `~/.gradle/caches` — no network access to `dl.google.com` needed
+
+See `docs/infrastructure/copilot-agent-infrastructure.md` for full sandbox capabilities matrix.
+
 ### QA-E2E Tasks (Appium MCP — Additional Step on Emulator)
 
 For `QA-E2E-*` tasks, the emulator is already running from the standard QA workflow. Appium is just an additional step:
@@ -82,6 +97,7 @@ Before delegating any task, always read these files for current project state:
 - `ORCHESTRATION.md` — Task board and progress
 - `AGENTS.md` — Project-wide agent instructions
 - `README.md` — Project overview
+- `docs/infrastructure/copilot-agent-infrastructure.md` — Sandbox constraints, firewall, OS-gating
 - `.copilot/mcp.json` — Available MCP servers (Appium, WebDriverIO)
 - `docs/appium-mcp-integration.md` — MCP-driven mobile testing guide
 - `openguard-core/src/commonMain/kotlin/com/openguard/core/OpenGuard.kt` — Main entry point

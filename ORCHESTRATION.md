@@ -16,12 +16,23 @@
 
 ## Rules (every task)
 
-1. Build must pass (`./gradlew build`)
-2. Tests must pass (`./gradlew test`)
+1. Build must pass (`./gradlew build`) — on Ubuntu this validates Android/JVM only; iOS validated in CI
+2. Tests must pass (`./gradlew test`) — JVM + commonTest in sandbox; iOS tests via macOS CI
 3. Follow existing Kotlin code patterns
 4. All public APIs need KDoc documentation
 5. Security implementations need `@security-review` sign-off
 6. Human approval required before moving to next task
+7. **OPS-* tasks with no dependencies take priority** — they unblock all downstream work
+8. For iOS tasks: push code → check macOS CI job logs → fix if needed → re-push
+
+### Sandbox Constraints
+
+The Copilot cloud agent runs on Ubuntu behind a DNS firewall. Key constraints:
+- `dl.google.com` is DNS-blocked — all Gradle deps are pre-cached in `copilot-setup-steps.yml`
+- iOS targets are OS-gated in `build.gradle.kts` — skipped on Ubuntu, compiled on macOS CI
+- Android emulator available via pre-created AVD (`openguard_test`)
+- Appium + MCP servers pre-installed for E2E testing
+- See `docs/infrastructure/copilot-agent-infrastructure.md` for full details
 
 ## Delegation Map
 
@@ -40,16 +51,17 @@
 
 ## Wave 0 — Research & Foundation
 
-_No code dependencies. Research and infrastructure can start immediately._
+_No code dependencies. Infrastructure and research can start immediately._
+_**Priority: OPS-001 must execute first** — it unblocks all downstream code tasks._
 
 | Status | ID | Task | Owner | Depends On |
 |--------|----|------|-------|------------|
+| ☐ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
+| ☐ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
 | ☐ | RES-001 | Root detection bypass resistance research | @research | — |
 | ☐ | RES-002 | iOS jailbreak detection research (palera1n, rootless) | @research | — |
 | ☐ | RES-003 | Frida detection techniques research | @research | — |
 | ☐ | RES-004 | Certificate pinning best practices research | @research | — |
-| ☐ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
-| ☐ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
 
 ---
 
