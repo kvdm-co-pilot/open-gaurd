@@ -13,10 +13,12 @@ The AI-assisted software development landscape has undergone a fundamental shift
 
 This document synthesizes the current state of the art across three major ecosystems:
 - **GitHub Copilot** (Mission Control, Agent HQ, `/fleet`, custom agents)
-- **Anthropic Claude** (Claude Code, sub-agent orchestration, tool_use)
+- **Anthropic Claude Opus 4.6** (Claude Code, sub-agent orchestration, tool_use)
 - **Industry frameworks** (Microsoft Agent Framework 1.0, Antigravity AgentKit)
 
-**Key finding:** The optimal approach for OpenGuard is a **hybrid orchestration model** — using GitHub's `.github/agents/` custom agent system for VS Code-based development, combined with GitHub Agent HQ for cross-model validation, and a version-controlled task board (`ORCHESTRATION.md`) for state management.
+**Key finding:** The optimal approach for OpenGuard is a **Copilot-native orchestration model** — using GitHub's `.github/agents/` custom agent system for VS Code-based development, with a version-controlled task board (`ORCHESTRATION.md`) for state management. Multi-model features like Agent HQ exist but are **not available within Copilot coding agent (cloud agent) sessions** — they require separate VS Code or GitHub.com workflows.
+
+> **⚠️ Practical constraint:** When working inside a GitHub Copilot coding agent session (cloud agent / web session), only the Copilot model is available. Claude Opus 4.6 and Codex cannot be invoked directly. Agent HQ multi-model support and `/fleet` CLI are separate features that require their own environments (VS Code desktop or GitHub CLI). All workflow recommendations in this document are designed to work within a single-model Copilot session unless explicitly marked as requiring additional tooling.
 
 ---
 
@@ -41,7 +43,9 @@ GitHub Copilot Mission Control is a centralized dashboard for assigning, monitor
 
 ### 2.2 Agent HQ (Multi-Model Support)
 
-Launched in April 2026, Agent HQ allows developers to run Claude (Anthropic), Codex (OpenAI), and GitHub Copilot together within a single unified workflow.
+> **⚠️ Note:** Agent HQ is a separate GitHub feature for assigning tasks to different AI models from GitHub Issues/PRs. It is **not accessible from within a Copilot coding agent session**. The coding agent (cloud agent / web session) runs only the Copilot model. Agent HQ requires using the GitHub.com UI or VS Code desktop to assign tasks to Claude Opus 4.6 or Codex independently.
+
+Launched in April 2026, Agent HQ allows developers to run Claude Opus 4.6 (Anthropic), Codex (OpenAI), and GitHub Copilot together within a single unified workflow.
 
 **Key capabilities:**
 - Run multiple AI models on the same task for cross-validation
@@ -52,16 +56,18 @@ Launched in April 2026, Agent HQ allows developers to run Claude (Anthropic), Co
 
 **Why multi-model matters:**
 - No single agent consistently produces perfect code
-- Claude excels at complex refactoring and broad context
+- Claude Opus 4.6 excels at complex refactoring and broad context
 - Codex delivers quick, pattern-driven generation
 - Copilot is best for tight IDE integration and incremental edits
 
 **Sources:**
-- [GitHub Blog: Pick your agent — Use Claude and Codex on Agent HQ](https://github.blog/news-insights/company-news/pick-your-agent-use-claude-and-codex-on-agent-hq/)
+- [GitHub Blog: Pick your agent — Use Claude Opus 4.6 and Codex on Agent HQ](https://github.blog/news-insights/company-news/pick-your-agent-use-claude-and-codex-on-agent-hq/)
 - [GitHub Agent HQ Guide](https://www.fundesk.io/github-agent-hq-multi-agent-development-guide)
-- [InfoWorld: GitHub previews support for Claude and Codex coding agents](https://www.infoworld.com/article/4130352/github-previews-support-for-claude-and-codex-coding-agents.html)
+- [InfoWorld: GitHub previews support for Claude Opus 4.6 and Codex coding agents](https://www.infoworld.com/article/4130352/github-previews-support-for-claude-and-codex-coding-agents.html)
 
 ### 2.3 Copilot CLI `/fleet` Command
+
+> **⚠️ Note:** The `/fleet` command is a Copilot CLI feature for local terminal use. It is **not available within the Copilot coding agent (cloud agent) web session**. To use `/fleet`, you need the Copilot CLI installed locally.
 
 The `/fleet` command enables true parallel multi-agent execution from the CLI.
 
@@ -129,9 +135,11 @@ handoffs:                      # Optional handoff targets
 
 ---
 
-## 3. Claude / Anthropic Ecosystem (April 2026)
+## 3. Claude Opus 4.6 / Anthropic Ecosystem (April 2026)
 
-### 3.1 Claude Code Agent
+> **⚠️ Availability note:** Claude Opus 4.6 features described below are **not accessible from within a GitHub Copilot coding agent session**. Claude Code requires its own CLI or IDE setup. Claude Opus 4.6 can be used alongside Copilot via Agent HQ (separate workflow from GitHub.com UI), but cannot be invoked as a sub-agent or model from within a Copilot session.
+
+### 3.1 Claude Code Agent (Powered by Claude Opus 4.6)
 
 Claude Code operates as a full-capability coding agent with:
 - Direct filesystem access (read, write, search)
@@ -168,7 +176,7 @@ Claude Code operates as a full-capability coding agent with:
 
 ### 3.3 tool_use System
 
-Claude's `tool_use` feature enables agents to:
+Claude Opus 4.6's `tool_use` feature enables agents to:
 - Call external APIs
 - Execute code for data processing
 - Chain tool calls — one sub-agent's result feeds as input to the next
@@ -218,17 +226,17 @@ A specialized multi-agent setup with 16 distinct agent types:
 
 ## 5. Cross-Platform Comparison
 
-| Capability | GitHub Copilot | Claude Code | MS Agent Framework |
+| Capability | GitHub Copilot | Claude Opus 4.6 | MS Agent Framework |
 |-----------|---------------|-------------|-------------------|
 | **Parallel execution** | ✅ (via `/fleet` and Mission Control) | ✅ (sub-agent spawning) | ✅ (native) |
 | **Stateless workers** | ✅ (sub-agents via `runSubagent`) | ✅ (handoff bundles) | ✅ (configurable) |
 | **Version-controlled state** | ✅ (ORCHESTRATION.md) | Manual | Manual |
-| **Multi-model support** | ✅ (Agent HQ: Claude + Codex + Copilot) | Single model | Multi-provider |
+| **Multi-model support** | ✅ (Agent HQ: Claude Opus 4.6 + Codex + Copilot) | Single model | Multi-provider |
 | **VS Code integration** | ✅ (native) | ✅ (via extension) | ✅ (via extension) |
 | **Custom agent definitions** | ✅ (.agent.md files) | System prompts | SDK configuration |
 | **Human-in-the-loop** | ✅ (PR review, Mission Control) | ✅ (checkpoints) | ✅ (configurable) |
 | **Enterprise governance** | ✅ (audit logs, permissions) | Limited | ✅ (full RBAC) |
-| **CLI support** | ✅ (`/fleet`, `/tasks`) | ✅ (Claude CLI) | ✅ (Python/CLI) |
+| **CLI support** | ✅ (`/fleet`, `/tasks`) | ✅ (Claude Code CLI) | ✅ (Python/CLI) |
 
 ---
 
@@ -267,8 +275,10 @@ Every task completion must pass through:
 
 ### 6.5 Multi-Model Cross-Validation
 
-For critical security code (especially relevant for OpenGuard):
-- Run the same task through Claude and Copilot independently
+> **⚠️ Practical constraint:** Multi-model cross-validation requires Agent HQ or manual workflow — it cannot be done from within a single Copilot coding agent session. Within a Copilot session, rely on thorough testing, human review, and the `@security-review` custom agent instead.
+
+For critical security code (especially relevant for OpenGuard), when using Agent HQ or separate sessions:
+- Run the same task through Claude Opus 4.6 and Copilot independently
 - Compare outputs for agreement or divergence
 - Use the strongest aspects of each model's output
 - Flag any security-critical disagreements for human review
@@ -304,8 +314,8 @@ For critical security code (especially relevant for OpenGuard):
 
 3. **Version-controlled task boards are critical.** ORCHESTRATION.md provides persistence across sessions and auditability.
 
-4. **Multi-model validation is the new best practice.** For security-critical code like OpenGuard, running tasks through multiple models catches more issues.
+4. **Multi-model validation is a best practice when feasible.** For security-critical code like OpenGuard, running tasks through multiple models catches more issues — but this requires Agent HQ or separate sessions, not a single Copilot coding agent session. Within a Copilot session, rely on thorough human review and dedicated security-review agents instead.
 
-5. **Parallel execution is production-ready.** Both `/fleet` and Claude sub-agents support real parallel work with dependency tracking.
+5. **Parallel execution is production-ready.** Both `/fleet` and Claude Opus 4.6 sub-agents support real parallel work with dependency tracking.
 
 6. **AGENTS.md is the universal instruction format.** Supported by GitHub Copilot, Cursor, OpenAI Codex, Google Jules, Aider, and more.

@@ -9,7 +9,9 @@
 
 ## 1. Overview
 
-This document defines the **ideal multi-agent orchestration workflow** for the OpenGuard project — an open-source RASP SDK for Kotlin Multiplatform targeting PCI DSS 4.0 compliance. It synthesizes April 2026 best practices from GitHub Copilot (Mission Control, Agent HQ, `/fleet`, custom agents), Claude (sub-agent orchestration), Microsoft Agent Framework 1.0, and analysis of 2,500+ AGENTS.md repositories.
+This document defines the **ideal multi-agent orchestration workflow** for the OpenGuard project — an open-source RASP SDK for Kotlin Multiplatform targeting PCI DSS 4.0 compliance. It synthesizes April 2026 best practices from GitHub Copilot (Mission Control, custom agents), industry frameworks (Microsoft Agent Framework 1.0), and analysis of 2,500+ AGENTS.md repositories.
+
+> **⚠️ Runtime constraint:** This workflow is designed to run entirely within **GitHub Copilot** (the only model available in Copilot coding agent / cloud agent / web sessions). Claude Opus 4.6 and other external models are **not available** within a Copilot session. Features like Agent HQ (multi-model) and `/fleet` (parallel CLI) are separate tools that require their own environments and are documented as optional enhancements where noted.
 
 The design optimizes for:
 - **Security correctness** (RASP SDK must be hardened)
@@ -48,7 +50,7 @@ Human Architect (approve/reject all changes)
 | **Role** | Read ORCHESTRATION.md, delegate tasks, validate results |
 | **Tools** | `read`, `edit`, `search`, `agent`, `todo`, `execute` |
 | **Sub-agents** | `kmp-core`, `android`, `ios`, `security-review`, `qa`, `devops`, `research`, `docs` |
-| **Model preference** | Claude Opus (complex reasoning for delegation decisions) |
+| **Model preference** | Copilot (default model in coding agent session) |
 
 **Responsibilities:**
 1. Read ORCHESTRATION.md → find next available task (lowest wave, dependencies met)
@@ -156,7 +158,7 @@ Human Architect (approve/reject all changes)
 | **Scope** | All source code (read-only for production code) |
 | **Role** | Security analysis, bypass resistance review, hardening recommendations |
 | **Tools** | `read`, `search` |
-| **Model preference** | Claude Opus (deep security reasoning) |
+| **Model preference** | Copilot (default model — Claude Opus 4.6 not available in coding agent sessions) |
 | **ID prefix** | `SEC-*` |
 
 **Responsibilities:**
@@ -173,7 +175,7 @@ Human Architect (approve/reject all changes)
 - Must reference OWASP MSTG test cases
 - Must evaluate against Magisk DenyList, palera1n, Frida latest
 
-**Why a dedicated security agent:** OpenGuard is a security SDK. Every implementation must be reviewed by an agent whose sole purpose is finding security weaknesses. This agent uses Claude Opus for its superior reasoning about adversarial scenarios.
+**Why a dedicated security agent:** OpenGuard is a security SDK. Every implementation must be reviewed by an agent whose sole purpose is finding security weaknesses. Since Claude Opus 4.6 is not available within Copilot coding sessions, this agent compensates by having comprehensive security-focused prompting, OWASP checklists, and mandatory human sign-off.
 
 ---
 
@@ -500,9 +502,11 @@ If critical issues found → task marked ⚠️, sent back to worker
 If no issues → task proceeds to ✅
 ```
 
-### 4.4 Parallel Execution with `/fleet`
+### 4.4 Parallel Execution with `/fleet` (CLI Only — Not Available in Web Session)
 
-For independent tasks within the same wave, use `/fleet`:
+> **⚠️ Note:** The `/fleet` command requires the Copilot CLI installed locally. It is **not available within the Copilot coding agent (cloud agent) web session**. Within a web session, tasks are executed sequentially by the orchestrator. Use `/fleet` only when working from a local terminal.
+
+For independent tasks within the same wave, use `/fleet` from Copilot CLI:
 
 ```
 /fleet Implement the following OpenGuard detections in parallel:
@@ -513,12 +517,14 @@ For independent tasks within the same wave, use `/fleet`:
 Each agent should follow the DetectionApi expect interface from commonMain.
 ```
 
-### 4.5 Cross-Model Validation (via Agent HQ)
+### 4.5 Cross-Model Validation (Optional — Requires Agent HQ Outside Coding Session)
 
-For the most security-critical implementations:
+> **⚠️ Note:** Cross-model validation requires Agent HQ, which is a **separate workflow from the Copilot coding agent session**. Within a coding session, rely on the `@security-review` agent + human review instead.
+
+For the most security-critical implementations, when Agent HQ is available (from GitHub.com UI):
 
 ```
-1. Assign task to both Copilot and Claude via Agent HQ
+1. Assign task to both Copilot and Claude Opus 4.6 via Agent HQ
 2. Both agents produce independent implementations
 3. Compare outputs:
    a. If substantial agreement → proceed with best version
@@ -633,7 +639,7 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 | 7 | **Minimal tool access** | Workers get only the tools they need (no `agent` tool) |
 | 8 | **Security-first** | Every detection implementation gets dedicated security review |
 | 9 | **Platform isolation** | Android agent cannot modify iOS code and vice versa |
-| 10 | **Multi-model validation** | Critical security code reviewed by multiple AI models |
+| 10 | **Human-driven security validation** | Human review required for all security-critical code (Claude Opus 4.6 not available in session) |
 | 11 | **Auditable trail** | Every task tracked in ORCHESTRATION.md for PCI DSS compliance |
 | 12 | **Parallel when safe** | Independent modules executed in parallel; dependent work sequential |
 
@@ -643,15 +649,15 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 
 | SDLC Phase | Wave | Agents Involved | Execution Mode |
 |------------|------|-----------------|----------------|
-| Research | Wave 0 | @research | Parallel (all research tasks independent) |
+| Research | Wave 0 | @research | Sequential in web session (parallelizable with `/fleet` CLI) |
 | Infrastructure | Wave 0 | @devops | Sequential (build → CI) |
 | API Design | Wave 1 | @kmp-core | Sequential (interfaces → config → engine) |
-| Android Implementation | Wave 2 | @android, @security-review, @qa | Parallel detections → sequential review |
-| iOS Implementation | Wave 2 | @ios, @security-review, @qa | Parallel detections → sequential review |
+| Android Implementation | Wave 2 | @android, @security-review, @qa | Sequential per task in web session |
+| iOS Implementation | Wave 2 | @ios, @security-review, @qa | Sequential per task in web session |
 | Network Security | Wave 3 | @kmp-core, @android, @ios, @security-review | Sequential (API → impl → review) |
 | Crypto & Storage | Wave 4 | @android, @ios, @security-review, @qa | Sequential (storage → crypto → review) |
 | Platform Attestation | Wave 5 | @research, @android, @ios, @security-review | Research → implementation → review |
-| Documentation | Wave 6 | @docs | Parallel (all docs independent) |
+| Documentation | Wave 6 | @docs | Sequential in web session |
 | Distribution | Wave 6 | @devops | Sequential (publishing → automation) |
 
 ---
@@ -679,13 +685,13 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 | Action | How |
 |--------|-----|
 | Start pipeline | `/run-pipeline` or `@orchestrator` in Copilot Chat |
-| Run parallel tasks | `/fleet <task list>` in Copilot CLI |
+| Run parallel tasks | `/fleet <task list>` in Copilot CLI (not available in web session) |
 | Add a task | Edit `ORCHESTRATION.md` |
 | Add a new agent role | Create `.agent.md` + update orchestrator's `agents:` list |
 | Check progress | Read `ORCHESTRATION.md` |
 | Security review | `@security-review` or auto-delegated by orchestrator |
-| Cross-model validation | Use Agent HQ to assign same task to Claude + Copilot |
-| Monitor parallel agents | `/tasks` in Copilot CLI |
+| Cross-model validation | Agent HQ on GitHub.com (not available in coding agent session) |
+| Monitor parallel agents | `/tasks` in Copilot CLI (not available in web session) |
 | Override auto-approve | Set `chat.tools.autoApprove: false` in VS Code settings |
 
 ---
@@ -694,11 +700,12 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 
 | Limitation | Mitigation |
 |-----------|------------|
-| No true parallelism in VS Code chat | Use `/fleet` CLI for parallel work; VS Code for sequential |
+| **Claude Opus 4.6 not available in Copilot session** | All workflows designed Copilot-only; Claude Opus 4.6 is optional via Agent HQ (separate workflow) |
+| No true parallelism in web/cloud session | Sequential execution within session; use `/fleet` CLI locally for parallel work |
 | Context window limits | Break tasks into small units; keep briefs under 4K tokens |
 | No persistent inter-agent memory | Orchestrator relays context; ORCHESTRATION.md is shared state |
 | Single session scope | Progress persists in ORCHESTRATION.md; re-invoke orchestrator |
-| Agent hallucinations in security code | Multi-model cross-validation; mandatory test execution |
+| Agent hallucinations in security code | Dedicated `@security-review` agent + mandatory human review + comprehensive tests |
 | KMP compile errors from context gaps | Include full `expect` interface in every brief |
 | iOS build verification requires macOS | CI runs on macOS runner; local verification on Linux limited |
 
@@ -710,7 +717,7 @@ It provides runtime security checks for fintech apps targeting PCI DSS 4.0.
 2. **Immediate:** Create `ORCHESTRATION.md` with Wave 0-6 task board
 3. **Immediate:** Create `AGENTS.md` with project-wide instructions
 4. **Immediate:** Create `.github/prompts/run-pipeline.prompt.md`
-5. **Week 1:** Execute Wave 0 (research + build system) using `/fleet`
+5. **Week 1:** Execute Wave 0 (research + build system)
 6. **Week 2:** Execute Wave 1 (core API design)
 7. **Week 3-4:** Execute Wave 2 (all detection implementations in parallel)
 8. **Week 5:** Execute Wave 3-4 (network + crypto)
