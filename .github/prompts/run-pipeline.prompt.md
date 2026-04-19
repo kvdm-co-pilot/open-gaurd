@@ -38,6 +38,15 @@ Follow the full orchestrator workflow defined in `.github/agents/orchestrator.ag
 7. Mark the task `✅` or `⚠️` based on results
 8. Update the Progress Summary table
 
+### QA-E2E Tasks (Appium MCP — Additional Step on Emulator)
+
+For `QA-E2E-*` tasks, the emulator is already running from the standard QA workflow. Appium is just an additional step:
+
+1. Ensure emulator is running: `emulator -avd openguard_test -noaudio -no-window &`
+2. Start Appium: `appium &`
+3. Use Appium MCP tools (via `.copilot/mcp.json`) to drive the sample app on the emulator
+4. See `docs/appium-mcp-integration.md` for full MCP tool call examples
+
 ## Step 4 — Report
 
 Tell the human:

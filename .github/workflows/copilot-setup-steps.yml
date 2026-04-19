@@ -33,16 +33,17 @@ jobs:
         with:
           node-version: "20"
 
-      # --- Appium + drivers ---
+      # --- Appium + drivers (additional layer on the emulator already set up above) ---
       - name: Install Appium and drivers
         run: |
           npm install -g appium
           appium driver install uiautomator2
           appium --version
 
-      # --- Appium MCP server (provides MCP tools for mobile automation) ---
-      # Two options are pre-installed; the orchestrator/QA agent can choose:
-      #   1. @wdio/mcp — WebDriverIO MCP (browser + mobile, unified)
+      # --- Appium MCP servers (gives Copilot direct access to the emulator via MCP tools) ---
+      # These are layered on top of the emulator — just run `appium &` and the MCP
+      # tools connect to it automatically. Two options pre-installed:
+      #   1. @wdio/mcp — WebDriverIO MCP (browser + mobile, unified) — recommended
       #   2. mcp-appium-visual — Appium-native MCP with visual element detection
       - name: Install Appium MCP servers
         run: |

@@ -9,14 +9,27 @@
 
 ## 1. Overview
 
-This document describes how OpenGuard uses **Appium MCP (Model Context Protocol) servers** to enable AI-driven mobile test automation during the orchestrator pipeline's QA phases. The MCP servers give the Copilot coding agent (and human developers in web sessions) direct access to mobile automation tools — launching emulators, installing APKs, tapping elements, taking screenshots, and validating security detection behavior on real (emulated) devices.
+The orchestrator pipeline already runs an **Android emulator** (`openguard_test` AVD) during QA phases to validate detection implementations on a real device. **Appium + MCP is simply an additional step on top of that existing emulator workflow** — it gives the Copilot coding agent (and human developers in web sessions) direct, conversational access to the running emulator via MCP tools.
 
-### Why Appium MCP?
+Instead of writing separate test scripts, the `@qa` agent can drive the emulator interactively: install the sample APK, tap buttons, read UI state, take screenshots, and validate that security detections fire correctly — all within the same Copilot session that's already running the pipeline.
 
-| Traditional Appium | Appium via MCP |
+### What Appium MCP Adds to the Existing Emulator Step
+
+```
+Existing pipeline step:          What Appium MCP adds:
+─────────────────────────        ─────────────────────────────────
+1. Build sample APK              (same)
+2. Start emulator                (same)
+3. Run unit tests on emulator    (same)
+4. ──── NEW ────                 Start Appium server (appium &)
+5. ──── NEW ────                 AI agent uses MCP tools to drive the emulator
+6. ──── NEW ────                 Conversational E2E validation via screenshots
+```
+
+| Without Appium MCP | With Appium MCP (additional step) |
 |---|---|
 | Write test scripts manually | AI agent drives the device conversationally |
-| Separate test framework setup | MCP tools available directly in Copilot session |
+| Separate test framework for E2E | MCP tools available directly in Copilot session |
 | Static test cases | Dynamic, exploratory testing by AI |
 | Results interpreted manually | Agent reads screenshots and UI state directly |
 
@@ -157,22 +170,28 @@ appium &
 
 ### 5.1 QA Phase Workflow
 
-When the `@qa` agent is delegated an E2E testing task (e.g., `QA-E2E-001`), it follows this workflow:
+The pipeline already starts an emulator for unit/instrumented tests. When the `@qa` agent reaches a `QA-E2E-*` task, it simply adds Appium on top of the running emulator:
 
 ```
+──── Existing pipeline steps (already planned) ────
 1. Build sample APK:          ./gradlew :sample:androidApp:assembleDebug
 2. Start Android emulator:    emulator -avd openguard_test -noaudio -no-window &
 3. Wait for boot:             adb wait-for-device && adb shell getprop sys.boot_completed
-4. Start Appium server:       appium &
-5. Use MCP tools to:
+4. Run unit/instrumented tests: ./gradlew connectedAndroidTest
+
+──── Additional step: Appium MCP ────
+5. Start Appium server:       appium &
+6. Use MCP tools to:
    a. start_session({ platform: "android", app: "sample/androidApp/build/..." })
    b. Verify OpenGuard initializes correctly
    c. Trigger detection checks (root, debugger, emulator, tamper)
    d. take_screenshot() to capture results
    e. Validate threat events are dispatched correctly
    f. close_session()
-6. Report results to @orchestrator
+7. Report results to @orchestrator
 ```
+
+> **Key point:** Steps 1-4 are the same emulator workflow we already planned. Step 5-6 is just `appium &` and then using MCP tools — that's the only addition.
 
 ### 5.2 Example MCP Tool Calls (for AI Agent)
 
