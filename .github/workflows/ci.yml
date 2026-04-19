@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Build + test on Ubuntu (Android/JVM compilation, shared tests)
+  # Job 1: Build + test on Ubuntu (Android/JVM only — iOS targets are OS-gated)
   build-and-test:
     runs-on: ubuntu-latest
 
@@ -33,16 +33,17 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # Compiles all targets (including iOS cross-compilation check via Kotlin/Native)
-      - name: Build
+      # On Ubuntu, iOS targets are automatically skipped by the OS-gating
+      # in openguard-core/build.gradle.kts (isMacOs check).
+      # This compiles Android/JVM targets and runs commonTest + androidTest.
+      - name: Build (Android/JVM)
         run: ./gradlew build
 
-      # Runs JVM + Android unit tests and commonTest shared logic
-      - name: Test
+      - name: Test (Android/JVM + commonTest)
         run: ./gradlew test
 
       # Lint check
@@ -50,8 +51,8 @@ jobs:
         run: ./gradlew detekt
         continue-on-error: true
 
-  # Job 2: iOS-specific tests on macOS (requires Xcode + iOS Simulator)
-  ios-test:
+  # Job 2: Full build including iOS on macOS (requires Xcode + iOS Simulator)
+  ios-build-and-test:
     runs-on: macos-15
     needs: build-and-test
 
@@ -73,21 +74,23 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # Compile the iOS framework for simulator
-      # Note: Exact Gradle task name depends on OPS-001 configuration.
-      # linkDebugFrameworkIosSimulatorArm64 is the standard KMP task name.
-      - name: Compile iOS framework
-        run: ./gradlew linkDebugFrameworkIosSimulatorArm64
-        continue-on-error: true
+      # On macOS, the OS-gating enables iOS targets automatically.
+      # This compiles all targets including iOS framework linking.
+      - name: Build (all targets including iOS)
+        run: ./gradlew build
 
       # Run Kotlin/Native iOS unit tests on simulator
-      # Note: Requires OPS-001 to configure iOS targets in build.gradle.kts
       - name: Run iOS unit tests
         run: ./gradlew iosSimulatorArm64Test
+        continue-on-error: true
+
+      # Compile the iOS framework for simulator
+      - name: Compile iOS framework
+        run: ./gradlew linkDebugFrameworkIosSimulatorArm64
         continue-on-error: true
 
       # Build and test sample iOS app (when sample/iosApp exists — see IOS-010)

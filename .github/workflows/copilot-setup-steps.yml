@@ -1,5 +1,16 @@
 name: "Copilot Setup Steps"
 
+# ─────────────────────────────────────────────────────────────────────
+# CRITICAL: This workflow runs BEFORE the Copilot cloud agent firewall
+# activates. The firewall blocks dl.google.com (where Google's Maven
+# repo hosts AGP, AndroidX, etc.). All Gradle dependencies MUST be
+# resolved here so they're cached in ~/.gradle/caches when the agent
+# runs builds later.
+#
+# See: https://docs.github.com/en/copilot/customizing-copilot/
+#      customizing-the-development-environment-for-copilot-coding-agent
+# ─────────────────────────────────────────────────────────────────────
+
 on:
   workflow_dispatch:
   push:
@@ -60,15 +71,28 @@ jobs:
           echo "no" | avdmanager create avd -n openguard_test -k "system-images;android-34;google_apis;x86_64" --force
 
       # --- Gradle dependencies (pre-cache for faster builds) ---
+      # IMPORTANT: This step runs with FULL internet access (before firewall).
+      # It must resolve ALL dependencies that `./gradlew build` and
+      # `./gradlew test` will need, because once the agent starts,
+      # dl.google.com will be DNS-blocked by the sandbox firewall.
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Pre-warm Gradle
-        run: ./gradlew dependencies --no-daemon || true
+      - name: Pre-cache ALL Gradle dependencies (before firewall activates)
+        run: |
+          chmod +x gradlew
+          # 1. Resolve build script / plugin dependencies (AGP, Kotlin plugin, etc.)
+          #    This downloads com.android.library, kotlin.multiplatform from dl.google.com
+          ./gradlew buildEnvironment --no-daemon
+          # 2. Resolve all module dependencies (AndroidX, OkHttp, coroutines, etc.)
+          ./gradlew :openguard-core:dependencies :openguard-android:dependencies :sample:androidApp:dependencies --no-daemon
+          # 3. Warm up the build to ensure all toolchains are downloaded
+          #    (Kotlin compiler, Android build tools, etc.)
+          ./gradlew :openguard-core:compileKotlinAndroid :openguard-android:compileKotlin --no-daemon || true
