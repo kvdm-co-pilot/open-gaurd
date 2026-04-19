@@ -49,7 +49,7 @@ _No code dependencies. Research and infrastructure can start immediately._
 | ☐ | RES-003 | Frida detection techniques research | @research | — |
 | ☐ | RES-004 | Certificate pinning best practices research | @research | — |
 | ☐ | OPS-001 | Configure Gradle KMP build system (verify all targets compile) | @devops | — |
-| ☐ | OPS-002 | Set up GitHub Actions CI pipeline (build + test) | @devops | OPS-001 |
+| ☐ | OPS-002 | Set up GitHub Actions CI pipeline (ubuntu: build+test, macOS: iOS simulator tests) | @devops | OPS-001 |
 
 ---
 
@@ -99,6 +99,9 @@ _iOS `actual` implementations. Runs in parallel with Wave 2a (Android)._
 | ☐ | IOS-005 | Implement tamper detection (code signature, provisioning, hash) | @ios | KMP-001 |
 | ☐ | SEC-002 | Security review: all iOS detection implementations | @security-review | IOS-001, IOS-002, IOS-003, IOS-004, IOS-005 |
 | ☐ | QA-003 | iOS detection unit tests (all detection types) | @qa | IOS-001, IOS-002, IOS-003, IOS-004, IOS-005 |
+| ☐ | IOS-010 | Create sample/iosApp — minimal SwiftUI app importing OpenGuardCore framework | @ios | KMP-001 |
+| ☐ | QA-E2E-004 | Build sample iOS app and run on simulator via macOS CI job | @qa | IOS-010, QA-003 |
+| ☐ | QA-E2E-005 | Validate all iOS detections trigger correctly on simulator | @qa | QA-E2E-004 |
 
 ---
 
@@ -166,9 +169,9 @@ _Final documentation, publishing, and release automation._
 | 0 | 6 | 0 | 0 | 6 | 0 |
 | 1 | 6 | 0 | 0 | 6 | 0 |
 | 2a | 9 | 0 | 0 | 9 | 0 |
-| 2b | 7 | 0 | 0 | 7 | 0 |
+| 2b | 10 | 0 | 0 | 10 | 0 |
 | 3 | 5 | 0 | 0 | 5 | 0 |
 | 4 | 6 | 0 | 0 | 6 | 0 |
 | 5 | 4 | 0 | 0 | 4 | 0 |
 | 6 | 6 | 0 | 0 | 6 | 0 |
-| **Total** | **49** | **0** | **0** | **49** | **0** |
+| **Total** | **52** | **0** | **0** | **52** | **0** |

@@ -234,13 +234,16 @@ close_session()
 
 ## 6. Integration with Orchestration Tasks
 
-The following tasks should be added to `ORCHESTRATION.md` to formalize E2E testing:
+The following tasks are tracked in `ORCHESTRATION.md`:
 
 | ID | Task | Owner | Wave | Depends On |
 |---|---|---|---|---|
 | QA-E2E-001 | Build sample app APK and run on emulator via Appium MCP | @qa | 2a | QA-002 |
 | QA-E2E-002 | Validate all Android detections trigger correctly on emulator | @qa | 2a | QA-E2E-001 |
 | QA-E2E-003 | Screenshot-based regression tests for sample app UI | @qa | 6 | QA-E2E-002, DOC-002 |
+| IOS-010 | Create sample/iosApp — minimal SwiftUI app importing OpenGuardCore | @ios | 2b | KMP-001 |
+| QA-E2E-004 | Build sample iOS app and run on simulator via macOS CI job | @qa | 2b | IOS-010, QA-003 |
+| QA-E2E-005 | Validate all iOS detections trigger correctly on simulator | @qa | 2b | QA-E2E-004 |
 
 ---
 
@@ -248,11 +251,13 @@ The following tasks should be added to `ORCHESTRATION.md` to formalize E2E testi
 
 ### GitHub Copilot Coding Agent Environment
 - **Runner:** Ubuntu-based (Linux x86_64) — supports Android emulation with KVM
-- **No iOS simulator:** iOS simulators require macOS; E2E iOS testing needs BrowserStack or a macOS self-hosted runner
+- **No iOS simulator on Ubuntu:** iOS simulators require macOS. The `ci.yml` macOS job handles iOS simulator testing automatically in CI
+- **macOS CI job:** The `ci.yml` workflow includes a `macos-15` job that runs iOS simulator tests automatically — no human needed for Layers 1-4
 - **Emulator performance:** KVM acceleration is available on GitHub-hosted runners, but emulator boot takes 60-90 seconds
 - **MCP server lifecycle:** MCP servers run as stdio processes managed by Copilot — they start/stop per session
 
-### BrowserStack (Optional)
+### BrowserStack (Optional — Real-Device Testing Only)
+For real-device testing (jailbroken devices, Secure Enclave, App Attest), BrowserStack is available as an optional cloud service. This is **not required** for normal CI — the macOS simulator job covers simulator-based validation. BrowserStack is only needed for testing detections that require real hardware.
 For real-device testing (especially iOS), configure BrowserStack credentials:
 ```json
 {
