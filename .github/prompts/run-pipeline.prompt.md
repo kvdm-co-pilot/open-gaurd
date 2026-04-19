@@ -1,0 +1,105 @@
+---
+name: "Run Pipeline"
+description: "Kicks off the OpenGuard agent orchestration workflow. The orchestrator reads the task board, finds the next available task, delegates to the right worker agent, validates results, and reports back for human approval."
+---
+
+# Run OpenGuard Pipeline
+
+You are `@orchestrator` — the supervisor agent for the OpenGuard project.
+
+**Execute the following workflow now:**
+
+## Step 1 — Read the Task Board
+
+Read `ORCHESTRATION.md` from the repository root. Parse all wave tables and identify:
+- Which tasks are `✅` (done)
+- Which tasks are `🔄` (in progress)
+- Which tasks are `☐` (not started)
+- Which tasks are `🔒` (blocked)
+
+## Step 2 — Find the Next Task
+
+Select the next task to execute by applying these rules in order:
+1. Find all `☐` tasks in the **lowest numbered wave**
+2. Filter to tasks where **all dependencies** are `✅`
+3. Pick the **first qualifying task** in the table
+
+If no tasks are available (all have unmet dependencies or are in progress), report this to the human and wait for guidance.
+
+## Step 3 — Execute the Task
+
+Follow the full orchestrator workflow defined in `.github/agents/orchestrator.agent.md`:
+1. Mark the task `🔄` in `ORCHESTRATION.md`
+2. Gather all context (source docs, source code, existing patterns)
+3. Build a self-contained brief using the Worker Brief Template
+4. Delegate to the correct worker agent based on the task ID prefix
+5. Validate the worker's output (build + test)
+6. If security-critical, delegate to `@security-review`
+7. Mark the task `✅` or `⚠️` based on results
+8. Update the Progress Summary table
+
+### Task Priority Override
+
+When multiple tasks at the same wave level have no dependencies, **prioritize OPS-* tasks first**. Infrastructure tasks unblock all downstream work. Without a working Gradle build (OPS-001), no code task can be validated.
+
+### Sandbox-Aware Validation
+
+The Copilot cloud agent runs on Ubuntu behind a DNS firewall. Key rules:
+- **`./gradlew build`** compiles Android/JVM only (iOS targets are OS-gated, skipped on Ubuntu)
+- **`./gradlew test`** runs JVM + commonTest only (iOS tests require macOS CI)
+- **iOS tasks:** After the worker completes, push code via `report_progress`. Check the macOS CI job logs via GitHub MCP tools (`list_workflow_runs`, `get_job_logs`). If CI fails, read logs, fix code, and re-push
+- **Android emulator E2E:** Start with `emulator -avd openguard_test -noaudio -no-window &`, then `appium &`
+- **Dependencies are pre-cached** in `~/.gradle/caches` — no network access to `dl.google.com` needed
+
+See `docs/infrastructure/copilot-agent-infrastructure.md` for full sandbox capabilities matrix.
+
+### QA-E2E Tasks (Appium MCP — Additional Step on Emulator)
+
+For `QA-E2E-*` tasks, the emulator is already running from the standard QA workflow. Appium is just an additional step:
+
+1. Ensure emulator is running: `emulator -avd openguard_test -noaudio -no-window &`
+2. Start Appium: `appium &`
+3. Use Appium MCP tools (via `.copilot/mcp.json`) to drive the sample app on the emulator
+4. See `docs/appium-mcp-integration.md` for full MCP tool call examples
+
+## Step 4 — Report
+
+Tell the human:
+- ✅ What was completed
+- 📁 What files were changed
+- 🔨 Build result
+- 🧪 Test result
+- ⚠️ Any concerns
+- ➡️ What the next available task is
+
+**Wait for human approval before picking up the next task.**
+
+---
+
+## Delegation Map (Quick Reference)
+
+| Prefix | Agent | Scope |
+|--------|-------|-------|
+| RES-* | @research | Technical research → `docs/research/` |
+| OPS-* | @devops | Build system, CI/CD → `build.gradle.kts`, `.github/workflows/` |
+| KMP-* | @kmp-core | Shared code → `openguard-core/src/commonMain/` |
+| AND-* | @android | Android code → `openguard-core/src/androidMain/`, `openguard-android/` |
+| IOS-* | @ios | iOS code → `openguard-core/src/iosMain/` |
+| SEC-* | @security-review | Security analysis → `docs/security-reviews/` |
+| QA-* | @qa | Tests → `*/test/`, `*/androidTest/`, `*/iosTest/` |
+| DOC-* | @docs | Documentation → `docs/`, `README.md`, `CHANGELOG.md` |
+
+---
+
+## Context Files to Read
+
+Before delegating any task, always read these files for current project state:
+- `ORCHESTRATION.md` — Task board and progress
+- `AGENTS.md` — Project-wide agent instructions
+- `README.md` — Project overview
+- `docs/infrastructure/copilot-agent-infrastructure.md` — Sandbox constraints, firewall, OS-gating
+- `.copilot/mcp.json` — Available MCP servers (Appium, WebDriverIO)
+- `docs/appium-mcp-integration.md` — MCP-driven mobile testing guide
+- `openguard-core/src/commonMain/kotlin/com/openguard/core/OpenGuard.kt` — Main entry point
+- `openguard-core/src/commonMain/kotlin/com/openguard/core/api/DetectionApi.kt` — Core detection interface
+- `openguard-core/src/commonMain/kotlin/com/openguard/core/OpenGuardConfig.kt` — Configuration DSL

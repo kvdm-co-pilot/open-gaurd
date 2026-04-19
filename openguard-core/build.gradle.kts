@@ -9,6 +9,12 @@ plugins {
 group = "com.openguard"
 version = "0.1.0-alpha"
 
+// iOS targets require Xcode command-line tools (macOS only).
+// On Linux (Copilot sandbox, Ubuntu CI), we skip iOS targets so that
+// `./gradlew build` and `./gradlew test` succeed for Android/JVM code.
+// The macOS CI job in ci.yml compiles and tests iOS targets separately.
+val isMacOs = System.getProperty("os.name").startsWith("Mac", ignoreCase = true)
+
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -18,14 +24,16 @@ kotlin {
         publishLibraryVariants("release")
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "OpenGuardCore"
-            isStatic = true
+    if (isMacOs) {
+        listOf(
+            iosX64(),
+            iosArm64(),
+            iosSimulatorArm64()
+        ).forEach { iosTarget ->
+            iosTarget.binaries.framework {
+                baseName = "OpenGuardCore"
+                isStatic = true
+            }
         }
     }
 
@@ -40,8 +48,10 @@ kotlin {
             implementation(libs.androidx.biometric)
             implementation(libs.okhttp)
         }
-        iosMain.dependencies {
-            // iOS-specific dependencies are added via interop
+        if (isMacOs) {
+            iosMain.dependencies {
+                // iOS-specific dependencies are added via interop
+            }
         }
     }
 }
