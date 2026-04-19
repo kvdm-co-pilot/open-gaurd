@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for OpenGuard Sample App.
+
+    PCI DSS 4.0 Req 4.2 — Strong cryptography for data in transit.
+
+    Production apps should:
+    1. Remove the <debug-overrides> section
+    2. Add certificate pins for all payment API domains
+    3. Set cleartextTrafficPermitted="false"
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Remove in production: allows cleartext for debug builds only -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+    <!--
+    Add domain-specific pinning for your payment API:
+    <domain-config>
+        <domain includeSubdomains="false">api.example.com</domain>
+        <pin-set expiration="2027-01-01">
+            <pin digest="SHA-256">AAAA...your_primary_pin...AAAA=</pin>
+            <pin digest="SHA-256">BBBB...your_backup_pin...BBBB=</pin>
+        </pin-set>
+    </domain-config>
+    -->
+</network-security-config>
